@@ -393,7 +393,7 @@ class Yolo_dataset(Dataset):
         pass
 
 if __name__ == "__main__":
-    from cfg_dataset import Cfg
+    from cfg import Cfg
     import matplotlib.pyplot as plt
 
     random.seed(2020)

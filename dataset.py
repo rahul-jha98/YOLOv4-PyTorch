@@ -229,13 +229,12 @@ def draw_box(img, bboxes):
 
 
 class Yolo_dataset(Dataset):
-    def __init__(self, data_dir, dataset_cfg, train=True):
+    def __init__(self, img_dir, annotation_dir, dataset_cfg, train=True):
       super(Yolo_dataset, self).__init__()
 
-      self.img_dir = os.path.join(data_dir, 'Images')
-      self.annotation_dir = os.path.join(data_dir, 'Annotations')
+      self.img_dir = img_dir
+      self.annotation_dir = annotation_dir
 
-      self.data_dir = data_dir
       self.dataset_cfg = dataset_cfg
       self.train = train
       self.imgs = []
@@ -243,10 +242,9 @@ class Yolo_dataset(Dataset):
       self._load_data_to_memory()
     
     def _load_data_to_memory(self):
-      
       image_list = os.listdir(self.img_dir)      
       truth = {}
-      print('Loading data from ', self.data_dir)
+      print('Loading data from ', self.img_dir)
       for img_file_name in tqdm(image_list):
 
         annotation_file_name = os.path.splitext(img_file_name)[0] + '.txt'

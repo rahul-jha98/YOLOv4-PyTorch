@@ -277,17 +277,23 @@ def collate(batch):
 
 
 def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=20, img_scale=0.5, tensorboard = False):
-    train_dataset = Yolo_dataset(config.train_label, config, train=True)
-    val_dataset = Yolo_dataset(config.val_label, config, train=False)
+    train_dataset = Yolo_dataset(config.train_img_dir, config.train_label_dir, config, train=True)
+    
+    if config.use_validation:
+        val_dataset = Yolo_dataset(config.valid_img_dir, config.valid_label_dir, config, train=False)
 
     n_train = len(train_dataset)
-    n_val = len(val_dataset)
+    
+    n_val = 0
+    if config.use_validation:
+        n_val = len(val_dataset)
 
     train_loader = DataLoader(train_dataset, batch_size=config.batch // config.subdivisions, shuffle=True,
                               num_workers=0, pin_memory=True, drop_last=True, collate_fn=collate)
 
-    val_loader = DataLoader(val_dataset, batch_size=config.batch // config.subdivisions, shuffle=True, num_workers=0,
-                            pin_memory=True, drop_last=True, collate_fn=val_collate)
+    if config.use_validation:
+        val_loader = DataLoader(val_dataset, batch_size=config.batch // config.subdivisions, shuffle=True, num_workers=0,
+                                pin_memory=True, drop_last=True, collate_fn=val_collate)
     if tensorboard:
         writer = SummaryWriter(log_dir=config.TRAIN_TENSORBOARD_DIR,
                             filename_suffix=f'OPT_{config.TRAIN_OPTIMIZER}_LR_{config.learning_rate}_BS_{config.batch}_Sub_{config.subdivisions}_Size_{config.width}',
@@ -310,7 +316,6 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
         Images size:     {config.width}
         Optimizer:       {config.TRAIN_OPTIMIZER}
         Dataset classes: {config.classes}
-        Train label path:{config.train_label}
         Pretrained:
     ''')
 
@@ -354,7 +359,7 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
         epoch_loss = 0
         epoch_step = 0
 
-        with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img', ncols=50) as pbar:
+        with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img', ncols=150) as pbar:
             for i, batch in enumerate(train_loader):
                 global_step += 1
                 epoch_step += 1
@@ -386,11 +391,9 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
                         writer.add_scalar('train/loss_l2', loss_l2.item(), global_step)
                         writer.add_scalar('lr', scheduler.get_lr()[0] * config.batch, global_step)
                         
-                    pbar.set_postfix({'loss (batch)': loss.item(), 'loss_xy': loss_xy.item(),
-                                        'loss_wh': loss_wh.item(),
+                    pbar.set_postfix({'loss (batch)': loss.item(),
                                         'loss_obj': loss_obj.item(),
                                         'loss_cls': loss_cls.item(),
-                                        'loss_l2': loss_l2.item(),
                                         'lr': scheduler.get_lr()[0] * config.batch
                                         })
                     logging.debug('Train step_{}: loss : {},loss xy : {},loss wh : {},'
@@ -447,7 +450,8 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
                     except:
                         logging.info(f'failed to remove {model_to_remove}')
 
-    writer.close()
+    if tensorboard:
+        writer.close()
 
 
 @torch.no_grad()
@@ -527,11 +531,11 @@ def get_args(**kwargs):
                         help='Load model from a .pth file')
     parser.add_argument('-g', '--gpu', metavar='G', type=str, default='-1',
                         help='GPU', dest='gpu')
-    parser.add_argument('-dir', '--data-dir', type=str, default=None,
-                        help='dataset dir', dest='dataset_dir')
+    # parser.add_argument('-dir', '--data-dir', type=str, default=None,
+    #                     help='dataset dir', dest='dataset_dir')
     parser.add_argument('-pretrained', type=str, default=None, help='pretrained yolov4.conv.137')
     parser.add_argument('-classes', type=int, default=80, help='dataset classes')
-    parser.add_argument('-train_label_path', dest='train_label', type=str, default='data/train.txt', help="train label path")
+    # parser.add_argument('-train_label_path', dest='train_label', type=str, default='data/train.txt', help="train label path")
     parser.add_argument(
         '-optimizer', type=str, default='adam',
         help='training optimizer',

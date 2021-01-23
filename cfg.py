@@ -6,8 +6,33 @@ _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 Cfg = EasyDict()
 
+# Config file to be used
 Cfg.use_darknet_cfg = False
 Cfg.cfgfile = os.path.join(_BASE_DIR, 'cfg', 'yolov4.cfg')
+
+'''
+Default path is set as 
+data/
+-- train/
+------ Images/          - Folder for train images
+------ Annotations/     - Folder for train annotations
+-- valid/
+------ Images/          - Folder for validation images
+------ Annotations/     - Folder for validation annotations
+'''
+Cfg.train_path = os.path.join(_BASE_DIR, 'data', 'train')
+Cfg.train_img_dir = os.path.join(Cfg.train_path, 'Images')
+Cfg.train_label_dir = os.path.join(Cfg.train_path, 'Annotations')
+
+Cfg.use_validation = False
+Cfg.validation_path = os.path.join(_BASE_DIR, 'data', 'valid')
+Cfg.valid_img_dir = os.path.join(Cfg.train_path, 'Images')
+Cfg.valid_label_dir = os.path.join(Cfg.train_path, 'Annotations')
+
+
+# Training loop parameters
+Cfg.TRAIN_EPOCHS = 300
+Cfg.TRAIN_OPTIMIZER = 'adam'
 
 Cfg.batch = 64
 Cfg.subdivisions = 16
@@ -24,8 +49,7 @@ Cfg.steps = [400000, 450000]
 Cfg.policy = Cfg.steps
 Cfg.scales = .1, .1
 
-Cfg.train_path = os.path.join(_BASE_DIR, 'data', 'train')
-Cfg.validation_path = os.path.join(_BASE_DIR, 'data', 'valid')
+# Parameters for transforms
 Cfg.angle = 0
 Cfg.saturation = 1.5
 Cfg.exposure = 1.5

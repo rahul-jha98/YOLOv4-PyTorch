@@ -21,10 +21,6 @@ from cfg import Cfg
 from models import Yolov4
 from tool.darknet2pytorch import Darknet
 
-from tool.tv_reference.utils import collate_fn as val_collate
-from tool.tv_reference.coco_utils import convert_to_coco_api
-from tool.tv_reference.coco_eval import CocoEvaluator
-
 
 def bboxes_iou(bboxes_a, bboxes_b, xyxy=True, GIoU=False, DIoU=False, CIoU=False):
     """Calculate the Intersection of Unions (IoUs) between bounding boxes.
@@ -293,7 +289,7 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
 
     if config.use_validation:
         val_loader = DataLoader(val_dataset, batch_size=config.batch // config.subdivisions, shuffle=True, num_workers=0,
-                                pin_memory=True, drop_last=True, collate_fn=val_collate)
+                                pin_memory=True, drop_last=True, collate_fn=collate)
     if tensorboard:
         writer = SummaryWriter(log_dir=config.TRAIN_TENSORBOARD_DIR,
                             filename_suffix=f'OPT_{config.TRAIN_OPTIMIZER}_LR_{config.learning_rate}_BS_{config.batch}_Sub_{config.subdivisions}_Size_{config.width}',

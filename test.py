@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 sized = cv2.resize(img, (args.width, args.height))
                 sized = cv2.cvtColor(sized, cv2.COLOR_BGR2RGB)
                 
-                boxes = do_detect(model, sized, 0.4, 0.6, use_cuda)
+                boxes = do_detect(model, sized, 0.4, 0.6, use_cuda, False)
                 class_names = load_class_names(args.namesfile)
                 
                 output_path = os.path.join(args.output, rel_img_path)

@@ -1,7 +1,6 @@
 import os
 import random
 import sys
-from tqdm import tqdm
 import glob
 
 import cv2
@@ -245,7 +244,7 @@ class Yolo_dataset(Dataset):
       image_list = os.listdir(self.img_dir)      
       truth = {}
       print('Loading data from ', self.img_dir)
-      for img_file_name in tqdm(image_list):
+      for img_file_name in image_list:
 
         annotation_file_name = os.path.splitext(img_file_name)[0] + '.txt'
 
@@ -396,7 +395,7 @@ if __name__ == "__main__":
 
     random.seed(2020)
     np.random.seed(2020)
-    dataset = Yolo_dataset(Cfg.train_path, Cfg)
+    dataset = Yolo_dataset(Cfg.train_img_dir, Cfg.train_label_dir, Cfg)
     for i in range(100):
         out_img, out_bboxes = dataset.__getitem__(i)
         a = draw_box(out_img.copy(), out_bboxes.astype(np.int32))

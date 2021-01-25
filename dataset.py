@@ -247,8 +247,8 @@ class Yolo_dataset(Dataset):
         
         for parent, _, files_list in os.walk(self.img_dir):
             parent_path = os.path.relpath(parent, self.img_dir) 
-            if parent_path.startswith('./'):
-                parent_path = parent_path[2:]
+            if parent_path.startswith('.'):
+                parent_path = parent_path[1:]
                 
             for img_file_name in files_list:
                 rel_img_path = os.path.join(parent_path, img_file_name)

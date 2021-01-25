@@ -52,8 +52,8 @@ if __name__ == "__main__":
         
         for parent, _, files_list in os.walk(args.input):
             parent_path = os.path.relpath(parent, args.input) 
-            if parent_path.startswith('./'):
-                parent_path = parent_path[2:]
+            if parent_path.startswith('.'):
+                parent_path = parent_path[1:]
                 
             for file in files_list:
                 img_path = os.path.join(parent, file)

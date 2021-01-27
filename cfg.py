@@ -24,10 +24,10 @@ Cfg.train_path = os.path.join(_BASE_DIR, 'data', 'train')
 Cfg.train_img_dir = os.path.join(Cfg.train_path, 'Images')
 Cfg.train_label_dir = os.path.join(Cfg.train_path, 'Annotations')
 
-Cfg.use_validation = False
-Cfg.validation_path = os.path.join(_BASE_DIR, 'data', 'valid')
-Cfg.valid_img_dir = os.path.join(Cfg.train_path, 'Images')
-Cfg.valid_label_dir = os.path.join(Cfg.train_path, 'Annotations')
+Cfg.use_validation = True
+Cfg.valid_path = os.path.join(_BASE_DIR, 'data', 'valid')
+Cfg.valid_img_dir = os.path.join(Cfg.valid_path, 'Images')
+Cfg.valid_label_dir = os.path.join(Cfg.valid_path, 'Annotations')
 
 
 # Training loop parameters

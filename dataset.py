@@ -243,7 +243,7 @@ class Yolo_dataset(Dataset):
     def _load_data_to_memory(self):
            
         truth = {}
-        print('Loading data from ', self.img_dir)
+        print('\nLoading data from ', self.img_dir)
         
         for parent, _, files_list in os.walk(self.img_dir):
             parent_path = os.path.relpath(parent, self.img_dir) 
@@ -268,7 +268,7 @@ class Yolo_dataset(Dataset):
                     pass
 
         self.truth = truth
-        print(f"Loaded images and annotations of {len(self.truth.keys())} images")
+        print(f"Loaded {len(self.truth.keys())} images and annotations\n")
 
     def __len__(self):
         return len(self.truth.keys())

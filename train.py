@@ -350,10 +350,38 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
     save_prefix = 'Yolov4_epoch'
     saved_models = deque()
     model.train()
+    if config.resume:
+        f = open("save_progress.txt", "r")
+        lines = f.readlines()
+        if config.resume==-1:
+            params = lines[-1].split(" ")
+            final_epoch = int(params[0])
+            global_step = int(params[1])
+            sched_steps = int(params[2])
+        else:
+            for line in lines:
+
+                params = line.split(" ")
+                final_epoch = int(params[0])
+                if final_epoch == config.resume-1:
+                    global_step = int(params[1])
+                    sched_steps = int(params[2])
+                    break
+                
+        model.load_state_dict(torch.load(os.path.join(config.checkpoints, f'{save_prefix}{final_epoch}.pth')))
+        for i in range(sched_steps):
+            scheduler.step()
+
+    else:
+        final_epoch = 0
+
     for epoch in range(epochs):
         # model.train()
         epoch_loss = 0
         epoch_step = 0
+
+        if epoch<final_epoch:
+            continue
 
         with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img', ncols=150) as pbar:
             for i, batch in enumerate(train_loader):
@@ -445,6 +473,21 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
                         os.remove(model_to_remove)
                     except:
                         logging.info(f'failed to remove {model_to_remove}')
+                try: 
+                    f = open("save_progress.txt", "r")
+                    lines = f.readlines()
+                    print(len(lines), config.keep_checkpoint_max)
+                    start_idx =  -(config.keep_checkpoint_max-1) if len(lines) >= config.keep_checkpoint_max  else 0
+                    print(start_idx)
+                    f.close()
+                except FileNotFoundError:
+                    lines = []
+                    start_idx = 0
+                f = open("save_progress.txt", "w")
+                for line in lines[start_idx: ]:
+                    f.write(line)
+                f.write(str(epoch+1)+" "+str(global_step)+" "+str(global_step//config.subdivisions)+'\n')
+                f.close()
 
     if tensorboard:
         writer.close()
@@ -537,13 +580,13 @@ def get_args(**kwargs):
         help='training optimizer',
         dest='TRAIN_OPTIMIZER')
     parser.add_argument(
+        '-resume', type=int, default=None,
+        help='resume traaining from epoch')
+    parser.add_argument(
         '-iou-type', type=str, default='iou',
         help='iou type (iou, giou, diou, ciou)',
         dest='iou_type')
-    parser.add_argument(
-        '-keep-checkpoint-max', type=int, default=10,
-        help='maximum number of checkpoints to keep. If set 0, all checkpoints will be kept',
-        dest='keep_checkpoint_max')
+
     args = vars(parser.parse_args())
 
     # for k in args.keys():

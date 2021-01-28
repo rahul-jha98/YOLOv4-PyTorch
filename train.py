@@ -4,6 +4,7 @@ import os, sys, math
 import argparse
 from collections import deque
 import datetime
+import warnings 
 
 import cv2
 from tqdm import tqdm
@@ -347,6 +348,8 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
     # scheduler = ReduceLROnPlateau(optimizer, mode='max', verbose=True, patience=6, min_lr=1e-7)
     # scheduler = CosineAnnealingWarmRestarts(optimizer, 0.001, 1e-6, 20)
 
+    warnings.simplefilter('ignore', UserWarning)
+
     save_prefix = 'Yolov4_epoch'
     saved_models = deque()
     model.train()
@@ -455,39 +458,38 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
             #writer.add_scalar('train/AR_small', stats[9], global_step)
             #writer.add_scalar('train/AR_medium', stats[10], global_step)
             #writer.add_scalar('train/AR_large', stats[11], global_step)
-
-            if save_cp:
-                try:
-                    # os.mkdir(config.checkpoints)
+            
+        if save_cp:
+            try:
+                # os.mkdir(config.checkpoints)
+                if not os.path.isdir(config.checkpoints):
                     os.makedirs(config.checkpoints, exist_ok=True)
                     logging.info('Created checkpoint directory')
-                except OSError:
-                    pass
-                save_path = os.path.join(config.checkpoints, f'{save_prefix}{epoch + 1}.pth')
-                torch.save(model.state_dict(), save_path)
-                logging.info(f'Checkpoint {epoch + 1} saved !')
-                saved_models.append(save_path)
-                if len(saved_models) > config.keep_checkpoint_max > 0:
-                    model_to_remove = saved_models.popleft()
-                    try:
-                        os.remove(model_to_remove)
-                    except:
-                        logging.info(f'failed to remove {model_to_remove}')
-                try: 
-                    f = open("save_progress.txt", "r")
-                    lines = f.readlines()
-                    print(len(lines), config.keep_checkpoint_max)
-                    start_idx =  -(config.keep_checkpoint_max-1) if len(lines) >= config.keep_checkpoint_max  else 0
-                    print(start_idx)
-                    f.close()
-                except FileNotFoundError:
-                    lines = []
-                    start_idx = 0
-                f = open("save_progress.txt", "w")
-                for line in lines[start_idx: ]:
-                    f.write(line)
-                f.write(str(epoch+1)+" "+str(global_step)+" "+str(global_step//config.subdivisions)+'\n')
+            except OSError:
+                pass
+            save_path = os.path.join(config.checkpoints, f'{save_prefix}{epoch + 1}.pth')
+            torch.save(model.state_dict(), save_path)
+            logging.info(f'Checkpoint {epoch + 1} saved !')
+            saved_models.append(save_path)
+            if len(saved_models) > config.keep_checkpoint_max > 0:
+                model_to_remove = saved_models.popleft()
+                try:
+                    os.remove(model_to_remove)
+                except:
+                    logging.info(f'failed to remove {model_to_remove}')
+            try: 
+                f = open("save_progress.txt", "r")
+                lines = f.readlines()
+                start_idx =  -(config.keep_checkpoint_max-1) if len(lines) >= config.keep_checkpoint_max  else 0
                 f.close()
+            except FileNotFoundError:
+                lines = []
+                start_idx = 0
+            f = open("save_progress.txt", "w")
+            for line in lines[start_idx: ]:
+                f.write(line)
+            f.write(str(epoch+1)+" "+str(global_step)+" "+str(global_step//config.subdivisions)+'\n')
+            f.close()
 
     if tensorboard:
         writer.close()

@@ -469,7 +469,7 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
                 pass
             save_path = os.path.join(config.checkpoints, f'{save_prefix}{epoch + 1}.pth')
             torch.save(model.state_dict(), save_path)
-            logging.info(f'Checkpoint {epoch + 1} saved !')
+            logging.info(f'Checkpoint {epoch + 1} saved !\n')
             saved_models.append(save_path)
             if len(saved_models) > config.keep_checkpoint_max > 0:
                 model_to_remove = saved_models.popleft()

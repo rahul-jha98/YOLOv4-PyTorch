@@ -275,6 +275,7 @@ class Yolo_dataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.imgs[index]
+        # print(img_path, self.img_dir, self.dataset_cfg.dataset_dir)
         bboxes = np.array(self.truth.get(img_path), dtype=np.float)
         img_path = os.path.join(self.img_dir, img_path)
 
@@ -394,7 +395,17 @@ class Yolo_dataset(Dataset):
             return out_img, out_bboxes1
         
         else:
-            print("need to implement validation data getitem")
+            out_bboxes1 = np.zeros([self.dataset_cfg.boxes, 5])
+            img = cv2.imread(img_path)
+
+            out_bboxes1[:min(bboxes.shape[0], self.dataset_cfg.boxes), 0] = (bboxes[:min(bboxes.shape[0], self.dataset_cfg.boxes), 0]/img.shape[1])*self.dataset_cfg.w
+            out_bboxes1[:min(bboxes.shape[0], self.dataset_cfg.boxes), 2] = (bboxes[:min(bboxes.shape[0], self.dataset_cfg.boxes), 2]/img.shape[1])*self.dataset_cfg.w
+
+            out_bboxes1[:min(bboxes.shape[0], self.dataset_cfg.boxes), 1] = (bboxes[:min(bboxes.shape[0], self.dataset_cfg.boxes), 1]/img.shape[0])*self.dataset_cfg.h
+            out_bboxes1[:min(bboxes.shape[0], self.dataset_cfg.boxes), 3] = (bboxes[:min(bboxes.shape[0], self.dataset_cfg.boxes), 3]/img.shape[0])*self.dataset_cfg.height
+
+            out_bboxes1[:min(bboxes.shape[0], self.dataset_cfg.boxes), 4] = bboxes[:min(bboxes.shape[0], self.dataset_cfg.boxes), 4]
+            return cv2.resize(cv2.imread(img_path), (600, 600), interpolation = cv2.INTER_NEAREST), out_bboxes1
 
 if __name__ == "__main__":
     from cfg import Cfg

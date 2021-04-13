@@ -495,70 +495,6 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
         writer.close()
 
 
-@torch.no_grad()
-def evaluate(model, data_loader, cfg, device, logger=None, **kwargs):
-    """ finished, tested
-    """
-    # cpu_device = torch.device("cpu")
-    model.eval()
-    # header = 'Test:'
-
-    coco = convert_to_coco_api(data_loader.dataset, bbox_fmt='coco')
-    coco_evaluator = CocoEvaluator(coco, iou_types = ["bbox"], bbox_fmt='coco')
-
-    for images, targets in data_loader:
-        model_input = [[cv2.resize(img, (cfg.w, cfg.h))] for img in images]
-        model_input = np.concatenate(model_input, axis=0)
-        model_input = model_input.transpose(0, 3, 1, 2)
-        model_input = torch.from_numpy(model_input).div(255.0)
-        model_input = model_input.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-        model_time = time.time()
-        outputs = model(model_input)
-
-        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        model_time = time.time() - model_time
-
-        # outputs = outputs.cpu().detach().numpy()
-        res = {}
-        # for img, target, output in zip(images, targets, outputs):
-        for img, target, boxes, confs in zip(images, targets, outputs[0], outputs[1]):
-            img_height, img_width = img.shape[:2]
-            # boxes = output[...,:4].copy()  # output boxes in yolo format
-            boxes = boxes.squeeze(2).cpu().detach().numpy()
-            boxes[...,2:] = boxes[...,2:] - boxes[...,:2] # Transform [x1, y1, x2, y2] to [x1, y1, w, h]
-            boxes[...,0] = boxes[...,0]*img_width
-            boxes[...,1] = boxes[...,1]*img_height
-            boxes[...,2] = boxes[...,2]*img_width
-            boxes[...,3] = boxes[...,3]*img_height
-            boxes = torch.as_tensor(boxes, dtype=torch.float32)
-            # confs = output[...,4:].copy()
-            confs = confs.cpu().detach().numpy()
-            labels = np.argmax(confs, axis=1).flatten()
-            labels = torch.as_tensor(labels, dtype=torch.int64)
-            scores = np.max(confs, axis=1).flatten()
-            scores = torch.as_tensor(scores, dtype=torch.float32)
-            res[target["image_id"].item()] = {
-                "boxes": boxes,
-                "scores": scores,
-                "labels": labels,
-            }
-        evaluator_time = time.time()
-        coco_evaluator.update(res)
-        evaluator_time = time.time() - evaluator_time
-
-    # gather the stats from all processes
-    coco_evaluator.synchronize_between_processes()
-
-    # accumulate predictions from all images
-    coco_evaluator.accumulate()
-    coco_evaluator.summarize()
-
-    return coco_evaluator
-
 
 def get_args(**kwargs):
     cfg = kwargs
@@ -566,26 +502,26 @@ def get_args(**kwargs):
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     # parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=2,
     #                     help='Batch size', dest='batchsize')
-    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.001,
+    parser.add_argument('--r', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.001,
                         help='Learning rate', dest='learning_rate')
-    parser.add_argument('-f', '--load', dest='load', type=str, default=None,
+    parser.add_argument('-l', '--load', dest='load', type=str, default=None,
                         help='Load model from a .pth file')
     parser.add_argument('-g', '--gpu', metavar='G', type=str, default='-1',
                         help='GPU', dest='gpu')
     # parser.add_argument('-dir', '--data-dir', type=str, default=None,
     #                     help='dataset dir', dest='dataset_dir')
-    parser.add_argument('-pretrained', type=str, default=None, help='pretrained yolov4.conv.137')
-    parser.add_argument('-classes', type=int, default=80, help='dataset classes')
+    parser.add_argument('--pretrained', type=str, default=None, help='pretrained yolov4.conv.137')
+    parser.add_argument('--classes', type=int, default=80, help='dataset classes')
     # parser.add_argument('-train_label_path', dest='train_label', type=str, default='data/train.txt', help="train label path")
     parser.add_argument(
-        '-optimizer', type=str, default='adam',
+        '--optimizer', type=str, default='adam',
         help='training optimizer',
         dest='TRAIN_OPTIMIZER')
     parser.add_argument(
-        '-resume', type=int, default=None,
-        help='resume traaining from epoch')
+        '--resume', type=int, default=None,
+        help='resume training from epoch')
     parser.add_argument(
-        '-iou-type', type=str, default='iou',
+        '--iou-type', type=str, default='iou',
         help='iou type (iou, giou, diou, ciou)',
         dest='iou_type')
 
@@ -599,10 +535,6 @@ def get_args(**kwargs):
 
 
 def init_logger(log_file=None, log_dir=None, log_level=logging.INFO, mode='w', stdout=True):
-    """
-    log_dir: 日志文件的文件夹路径
-    mode: 'a', append; 'w', 覆盖原文件写入.
-    """
     def get_date_str():
         now = datetime.datetime.now()
         return now.strftime('%Y-%m-%d_%H-%M-%S')
@@ -615,7 +547,6 @@ def init_logger(log_file=None, log_dir=None, log_level=logging.INFO, mode='w', s
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
     log_file = os.path.join(log_dir, log_file)
-    # 此处不能使用logging输出
     print('log file path:' + log_file)
 
     logging.basicConfig(level=logging.DEBUG,
